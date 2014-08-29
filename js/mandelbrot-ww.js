@@ -121,7 +121,8 @@ var mandelbrotWorkers = function () {
 
   function mWorker (wworker, handler, bufferSize) {
     this.wworker = wworker;
-    this.buffer  = new ArrayBuffer (bufferSize);
+    var newsize = 1 << (32 - Math.clz32(bufferSize));
+    this.buffer  = new ArrayBuffer (newsize);
     this.handler = handler;
   }
 
@@ -233,7 +234,8 @@ function animateMandelbrot () {
 
   // Send the pixels to the canvas, and update the FPS measurement
   function paintFrame(buffer) {
-    canvas.updateFromImageData(buffer);
+      var b = new Uint8ClampedArray(buffer.buffer, 0, width * height * 4);
+    canvas.updateFromImageData(b);
     if (frame_count > 0 && ((frame_count % 10)|0) === 0) {
       var t = performance.now();
       update_fps (10000/(t - now));
@@ -243,6 +245,7 @@ function animateMandelbrot () {
 
   // Called when a worker has computed a frame
   function updateFrame(e) {
+      //console.log("updateFrame");
     var worker_index  = e.data.worker_index;
     var request_count = e.data.message.request_count;
     mandelbrotWorkers.restoreBuffer (worker_index, e.data.buffer);
@@ -375,6 +378,8 @@ function simd() {
 function main () {
   logger.msg ("main()");
   canvas.init ("#mandel");
+    canvas.width = 1024;
+    canvas.height = 1024;
   canvas.clear ();
   canvas.update ();
   $("#start").click (start);
